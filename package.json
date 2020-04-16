@@ -1,0 +1,20 @@
+{
+  "name": "express-oauth",
+  "version": "0.0.1",
+  "description": "Middleware for express to secure endpoints with OAuth tokens",
+  "main": "index.js",
+  "directories": {
+    "example": "example"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node example/server.js"
+  },
+  "author": "Curity AB",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "async": "^3.2.0",
+    "express": "^4.17.1",
+    "jose": "^1.25.0"
+  }
+}
