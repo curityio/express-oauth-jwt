@@ -14,16 +14,6 @@
  *  limitations under the License.
  */
 
- /**
- * This the main file configuring and starting the server.
- */
-const express = require('express');
-const app = express();
-
-const port = 3000;
-
-app.use('/secured', require('./secured.controller'));
-
-const server = app.listen(port, function() {
-    console.log("Sever listening on port " + port);
-});
+ module.exports = {
+    jwks_uri: "" // URI to the JWKS endpoint exposed by the Authorization Server
+}

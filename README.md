@@ -1,93 +1,137 @@
-# Securing endpoints in Express with OAuth tokens
+# Securing endpoints in Express with OAuth JWT tokens
 
-This example code shows a simple way of creating a middleware which secures endpoints in Express with JWT tokens. The
-implementation uses a JWKS endpoint to get a key required for verification of token signature.
+This library allows you to secure your Express endpoints with JWTs. The implementation uses a JWKS endpoint of an
+Authorization Server to get keys required for the verification of the token signature.
 
 ## Running the example
 
 1. Download the code and install dependencies running `npm i`.
-2. Rename the file `config-template.js` in the `src` directory to `config.js` and fill with proper settings (see below).
-3. Start the demo server with `npm start`.
+2. In `settings.js` in the `example` directory set the URI of the JWKS endpoint exposed by the Authorization Server.
+3. Start the demo server with `npm run example`.
 4. The server exposes endpoints `/secured/token`, `/secured/scope` and `/secured/claim` which present different options
 of securing the endpoints.
 
-## Settings
+## Installing the dependency
 
-To properly verify incoming signed JWT tokens you need to fill the settings:
+Use `npm` to install the library in your project:
 
-1. The `issuer` should be set to the identifier of the issuer of tokens you will accept.
-2. The `audience` should be the accepted value of the `audience` claim.
-3. `jwks_uri` should be the JWKS endpoint exposed by the Authorization Server.
-
-An example of a prepared settings file:
-
-```js
-{
-    issuer: "https://my-oauth-server.com/oauth/my-oauth",
-    audience: "some-client-id",
-    jwks_uri: "https://my-oauth-server.com/oauth/my-oauth/jwks"
-}
+```bash
+npm install express-oauth-jwt
 ```
 
 ## Usage
 
-You can find the middleware securing the endpoints in the `src/secure.js` file. It uses the `jose` node library to
-decode and verify the JWT token. The middleware also shows how you can easily add additional verification of the
-received tokens, by checking scopes and claims of the token. Finally the claims of the received tokens are added to the
-request objects in a `claims` field.
+### Preparing the JWKS Service
+
+The `secure` middleware needs a JWKS Service which is capable of retrieving any keys needed to verify the signature of
+the incoming token. To instantiate the service use the convenience method `getSimpleJwksService`, providing it with the
+JWKS endpoint URI.
+
+```javascript
+const { getSimpleJwksService } = require('express-oauth-jwt');
+
+const jwksService = getSimpleJwksService("https://myoauthserver.com/auth/jwks");
+```
+
+The service will cache the obtained JWKS data in memory. If a key is encountered, which is not present in the cache the
+service will try to get new JWKS data from the endpoint. The request will fail only when the key is not found in the
+refreshed key store.
+
+If you need more control over the service you can create it yourself providing it with:
+
+- a cache implementation
+- an https client
+- the JWKS endpoint URI
+
+```javascript
+const { jwksService } = require('express-oauth-jwt');
+const jwksServiceInstance = jwksService(cache, jwksUri, client);
+```
+
+#### The cache
+
+The cache needs to be an object which exposes two asynchronous methods:
+
+- `getKeyStore(): Promise<jose.JWKS.Keystore>`
+- `setKeyStore(keystore): Promise` - `keystore` is of type `jose.JWKS.Keystore`
+
+The default implementation keeps the value in memory.
+
+#### The https client
+
+This is the node native `https` client. Pass your instance of the client if you need to set any options.
+
+### Securing an endpoint
+
+To secure an endpoint apply the `secure` middleware to it. Any endpoint with this middleware applied will require a valid
+JWT token sent in the `Authorization` header in the form `Bearer <token_value>`. The token, if valid, will be decoded
+and all its' claims will be set in the request in a `claims` field.
+
+If the token does not pass validation, a 403 response will be returned. If no JWT token is found in the request, a 401
+response will be returned. The response will have the `WWW-Authenticate` header set with detailed information on
+the error (as specified in the [RFC 6750: The OAuth 2.0 Authorization Framework: Bearer Token Usage](https://tools.ietf.org/html/rfc6750)).
+
+If you want the `WWW-Authenticate` to return a `realm` value, pass the middleware an `options` objects with the `realm`
+option set.
+
+```javascript
+const { secure } = require('express-oauth-jwt');
+router.use(secure(jwksService, { realm: 'my-realm' }));
+```
+
+The `WWW-Authenticate` header in the error response will then might look like this:
+
+```curl
+WWW-Authenticate: Bearer realm="my-realm", error="invalid_token", error_description="..."
+```
 
 ### Authorizing the request based on scopes
 
-In order to limit the request to given scopes pass the middleware an `options` object with a list of strings in the
+In order to limit the request to given scope values pass the middleware an `options` object with a list of strings in the
 `scope` field:
 
-```js
-const secure = require('../src/secure');
-router.use(secure({ scope: ["scope1", "scope2"] }));
+```javascript
+const secure = require('express-oauth-jwt');
+router.use(secure(jwksService, { scope: ["scope1", "scope2"] }));
 ```
 
 ### Authorizing the request based on claims
 
-In order to limit the request based on claims pass the middleware an `options` object with a list of claims in the
-`claims` field. Each claim should be an object with the `name` field. Additionally you can also set the `value` field. If
-only the `name` field is set then the validator only checks wether the claim exists in the token. If `value` is set as
-well, then the value of the claim in the token must also match.
+In order to limit the request based on the presence or value of concrete claims, pass the middleware an `options` object
+with a list of claims in the `claims` field. Each claim should be an object with at least the `name` field. Optionally
+you can set the `value` field. If only the `name` field is set then the validator checks whether the claim
+exists in the token. If `value` is set as well, then the value of the claim in the token must also match.
 
-```js
-const secure = require('../src/secure');
-router.use(secure({ claims: [ { name: "someClaim", value: "withValue" } ] }));
+```javascript
+const secure = require('express-oauth-jwt');
+router.use(secure(jwksService, { claims: [ { name: "someClaim", value: "withValue" } ] }));
 ```
-
-### JWKS support
-
-The `jwksService` class reads the key store data from a JWKS endpoint exposed by the Authorization Server and stores this
-information in memory. Usually the key store data does not change dynamically, but still it can change over time. Thus,
-the `secure` middleware tries to refresh the key store data if no suitable key is found to verify the token.
 
 ## Using Opaque tokens
 
-The middleware shown here uses JWT tokens, which can be easily decoded offline into a JSON object containing claims about
-the user sending the request. But it is not always the case that JWT tokens are used for authorization. Sometimes the
-Authorization Server will issue an opaque token, which is just an identifier of the user's data, and the data itself is
-kept safely with the Authorization Server.
+This middleware uses JSON Web Tokens, which can be easily decoded offline into a JSON object containing claims about
+the user or client sending the request. But this is not always the case that JWT tokens are used for authorization.
+Sometimes the Authorization Server will issue an opaque token, which is just an identifier of the user's data, and the
+data itself is kept safely with the Authorization Server.
 
 If you use opaque tokens for authorization then the token needs to be exchanged for data associated with it. It
-cannot be decoded as the value of the token does not contain any data. In such situation the best approach is to use the
+cannot be decoded, as the value of the token does not contain any data. In such situation, the best approach is to use the
 Phantom token approach - let your API gateway exchange the opaque token for a JWT. This way your service will always
 receive a JWT which can be decoded with the approach shown here.
 
-You can find out more on the Phantom token approach in the 
-(Phantom Token Pattern)[https://curity.io/resources/architect/api-security/phantom-token-pattern/] article. If you
-want to learn how to enable Phantom tokens in Curity take a look at 
-(this tutorial)[https://curity.io/resources/operate/tutorials/integration/introspect-with-phantom-token/].
+You can find out more on the Phantom token approach in the
+[Phantom Token Pattern](https://curity.io/resources/architect/api-security/phantom-token-pattern/) article.
+
+If you're using Curity Identity Server you can learn how to enable Phantom tokens with the help of
+[this tutorial](https://curity.io/resources/operate/tutorials/integration/introspect-with-phantom-token/).
 
 ## Access token claims in Request object
 
-The `secure` middleware adds claims obtained from the access token into the Express' request object, in the `claims`
-field. You can access these claims in any other middleware which is next in chain, or in the controllers.
+The `secure` middleware adds claims obtained from the access token into the Express request object, in the `claims`
+field. You can access these claims in any other middleware which is next in chain and in the controllers.
 
-```js
-function getLibraryData(req, res, next) {
+```javascript
+function getLibraryData(req, res) {
     if (req.claims.myClaim == 'someValue') {
         ...
     }
@@ -103,6 +147,5 @@ For questions and support, contact Curity AB:
 >
 > info@curity.io
 > https://curity.io
-
 
 Copyright (C) 2020 Curity AB.

@@ -1,20 +1,36 @@
 {
-  "name": "express-oauth",
-  "version": "0.0.1",
-  "description": "Middleware for express to secure endpoints with OAuth tokens",
-  "main": "index.js",
+  "name": "express-oauth-jwt",
+  "version": "1.0.0",
+  "description": "Middleware for Express to secure endpoints with OAuth JWT Bearer tokens",
+  "homepage": "https://github.com/curityio/express-oauth-jwt",
+  "repository": "curityio/express-oauth-jwt",
+  "main": "lib/index.js",
   "directories": {
+    "lib": "lib",
+    "test": "test",
     "example": "example"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node example/server.js"
+    "test": "ava",
+    "example": "node example/server.js"
+  },
+  "ava": {
+    "files": [
+      "test/*.test.js"
+    ]
   },
   "author": "Curity AB",
   "license": "Apache-2.0",
   "dependencies": {
     "async": "^3.2.0",
-    "express": "^4.17.1",
     "jose": "^1.25.0"
+  },
+  "devDependencies": {
+    "express": "^4.17.1",
+    "ava": "^3.7.1",
+    "sinon": "^9.0.2"
+  },
+  "engines": {
+    "node": ">=10.13.0"
   }
 }

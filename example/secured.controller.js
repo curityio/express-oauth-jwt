@@ -19,28 +19,31 @@
  */
 const express = require('express');
 const router = express.Router();
-const secure = require('../src/secure');
+const secure = require('../lib/secure');
+const settings = require('./settings');
+const { getSimpleJwksService } = require('../lib/jwksService');
 
+const jwksService = getSimpleJwksService(settings.jwks_uri);
 
-// Here we mount the middleware which secures our endpoints with different option
+// Here we mount the middleware which secures our endpoints with different options
 
 // Require a valid JWT token to be present in the request 
-router.get('/token', secure({}), getSecuredWithAnyToken);
+router.get('/token', secure(jwksService), getSecuredWithAnyToken);
 
 // Require a given scope to be present in the token
-router.get('/scope', secure({ scope: [ "read" ] }), getSecuredWithScope);
+router.get('/scope', secure(jwksService, { scope: [ "read" ] }), getSecuredWithScope);
 
 // Require claims in the token
-const options = { 
-    claims: [ 
+const options = {
+    claims: [
         { name: "sub" }, // Require the presence of a claim
         { name: "myClaim", value: "someRequiredValue" } // Require concrete value of a claim
-    ]}
-router.get('/claim', secure(options), getSecuredWithClaims);
+    ]};
+router.get('/claim', secure(jwksService, options), getSecuredWithClaims);
 
 module.exports = router;
 
-// Some simple endpoints which return data.
+// Endpoints which return data.
 function getSecuredWithAnyToken(req, res, next) {
     res.status(200).json({ data: "Some data from secured endpoint.", user: req.claims.sub });
 }
