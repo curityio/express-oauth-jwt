@@ -1,6 +1,5 @@
 # Securing endpoints in Express with OAuth JWT tokens
        
-[![Build](https://travis-ci.org/curityio/express-oauth-jwt.svg?branch=master)](https://travis-ci.org/curityio/express-oauth-jwt)
 [![Quality](https://curity.io/assets/images/badges/securing-endpoints-in-an-express-app-with-jwts-quality.svg)](https://curity.io/resources/code-examples/status/)
 [![Availability](https://curity.io/assets/images/badges/securing-endpoints-in-an-express-app-with-jwts-availability.svg)](https://curity.io/resources/code-examples/status/)
 
