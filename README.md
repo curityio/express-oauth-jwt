@@ -1,7 +1,7 @@
 # Securing endpoints in Express with OAuth JWT tokens
        
-[![Quality](https://curity.io/assets/images/badges/securing-endpoints-in-an-express-app-with-jwts-quality.svg)](https://curity.io/resources/code-examples/status/)
-[![Availability](https://curity.io/assets/images/badges/securing-endpoints-in-an-express-app-with-jwts-availability.svg)](https://curity.io/resources/code-examples/status/)
+[![Quality](https://curity.io/assets/images/badges/express-oauth-jwt-quality.svg)](https://curity.io/resources/code-examples/status/)
+[![Availability](https://curity.io/assets/images/badges/express-oauth-jwt-availability.svg)](https://curity.io/resources/code-examples/status/)
 
 
 This library allows you to secure your Express endpoints with JWTs. The implementation uses a JWKS endpoint of an
