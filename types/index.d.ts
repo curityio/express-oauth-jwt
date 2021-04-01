@@ -1,12 +1,14 @@
 import { RequestHandler } from "express";
-import https from 'https';
-import jose from 'jose';
+import * as https from 'https';
+import { JWKS } from "jose";
+import KeyStore = JWKS.KeyStore;
+
 
 declare namespace errors {
-    declare class InsufficientScopeError extends Error {
+    class InsufficientScopeError extends Error {
         constructor();
     }
-    declare class TokenClaimsError extends Error {
+    class TokenClaimsError extends Error {
         constructor();
     }
 }
@@ -22,18 +24,18 @@ interface Options {
 }
 
 interface JwksService {
-    (callback: any, refreshKeyStore?: boolean):any
+    (callback: (error?: Error, keyStore?: KeyStore) => void, refreshKeyStore?: boolean): Promise<void>;
 }
 
 interface Cache {
-    getKeyStore(): Promise<jose.JWKS.KeyStore>;
-    setKeyStore(keystore: jose.JWKS.KeyStore): Promise<jose.JWKS.KeyStore>;
+    getKeyStore(): Promise<KeyStore>;
+    setKeyStore(keystore: KeyStore): Promise<void>;
 }
 
 declare class InMemoryCache implements Cache {
-    keyStore: jose.JWKS.KeyStore;
-    getKeyStore: () => Promise<jose.JWKS.KeyStore>;
-    setKeyStore: (keyStore: jose.JWKS.KeyStore) => Promise<jose.JWKS.KeyStore>;
+    keyStore: KeyStore;
+    getKeyStore: () => Promise<KeyStore>;
+    setKeyStore: (keyStore: KeyStore) => Promise<void>;
 }
 
 declare function jwksService(cache: Cache, jwksUri: string, client?: typeof https): JwksService;
