@@ -4,8 +4,16 @@
   "description": "Middleware for Express to secure endpoints with OAuth JWT Bearer tokens",
   "homepage": "https://github.com/curityio/express-oauth-jwt",
   "repository": "curityio/express-oauth-jwt",
-  "keywords": [ "oauth", "jwt", "jwks", "jws", "express", "oauth2" ],
+  "keywords": [
+    "oauth",
+    "jwt",
+    "jwks",
+    "jws",
+    "express",
+    "oauth2"
+  ],
   "main": "lib/index.js",
+  "types": "types/index.d.ts",
   "directories": {
     "lib": "lib",
     "test": "test",
@@ -28,6 +36,7 @@
   },
   "devDependencies": {
     "express": "^4.17.1",
+    "@types/express": "^4.17.11",
     "ava": "^3.7.1",
     "sinon": "^9.0.2"
   },
