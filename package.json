@@ -31,7 +31,6 @@
   "author": "Curity AB",
   "license": "Apache-2.0",
   "dependencies": {
-    "async": "^3.2.3",
     "jose": "^4.6.1"
   },
   "devDependencies": {
