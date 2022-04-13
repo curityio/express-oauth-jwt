@@ -21,9 +21,9 @@ const express = require('express');
 const router = express.Router();
 const secure = require('../lib/secure');
 const settings = require('./settings');
-const { getSimpleJwksService } = require('../lib/jwksService');
+const {createRemoteJWKSet} = require("jose");
 
-const jwksService = getSimpleJwksService(settings.jwks_uri);
+const jwksService = createRemoteJWKSet(new URL(settings.jwks_uri));
 
 // Here we mount the middleware which secures our endpoints with different options
 
