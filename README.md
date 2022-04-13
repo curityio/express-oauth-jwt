@@ -25,57 +25,33 @@ npm install express-oauth-jwt
 
 ## Usage
 
-### Preparing the JWKS Service
+### Preparing the Middleware
 
-The `secure` middleware needs a JWKS Service which is capable of retrieving any keys needed to verify the signature of
-the incoming token. To instantiate the service use the convenience method `getSimpleJwksService`, providing it with the
-JWKS endpoint URI.
+The `secure` middleware needs a method to obtain keys. You can use the `jose`-provided method, or create your own instance.
+The method is responsible for obtaining signature verification keys for a concrete token, and has the signature:
 
-```javascript
-const { getSimpleJwksService } = require('express-oauth-jwt');
+`function(headerParameters: JWSHeaderParameters, input: FlattenedJWSInput): Promise<KeyLike | Uint8Array> | KeyLike | Uint8Array`
 
-const jwksService = getSimpleJwksService("https://myoauthserver.com/auth/jwks");
-```
-
-The service will cache the obtained JWKS data in memory. If a key is encountered, which is not present in the cache the
-service will try to get new JWKS data from the endpoint. The request will fail only when the key is not found in the
-refreshed key store.
-
-If you need more control over the service you can create it yourself providing it with:
-
-- a cache implementation
-- an https client
-- the JWKS endpoint URI
+The easiest way is to use the method provided by the `jose` library. The method caches the result of the JWKS endpoint request
+in memory to limit sending requests to the server.
 
 ```javascript
-const { jwksService } = require('express-oauth-jwt');
-const jwksServiceInstance = jwksService(cache, jwksUri, client);
+const jwksService = createRemoteJWKSet(new URL(settings.jwks_uri))
+const midleware = secure(jwksService)
+
 ```
-
-#### The cache
-
-The cache needs to be an object which exposes two asynchronous methods:
-
-- `getKeyStore(): Promise<jose.JWKS.Keystore>`
-- `setKeyStore(keystore): Promise` - `keystore` is of type `jose.JWKS.Keystore`
-
-The default implementation keeps the value in memory.
-
-#### The https client
-
-This is the node native `https` client. Pass your instance of the client if you need to set any options.
 
 ### Securing an endpoint
 
 To secure an endpoint apply the `secure` middleware to it. Any endpoint with this middleware applied will require a valid
 JWT token sent in the `Authorization` header in the form `Bearer <token_value>`. The token, if valid, will be decoded
-and all its' claims will be set in the request in a `claims` field.
+and all its claims will be set in the request in a `claims` field.
 
 If the token does not pass validation, a 403 response will be returned. If no JWT token is found in the request, a 401
 response will be returned. The response will have the `WWW-Authenticate` header set with detailed information on
 the error (as specified in the [RFC 6750: The OAuth 2.0 Authorization Framework: Bearer Token Usage](https://tools.ietf.org/html/rfc6750)).
 
-If you want the `WWW-Authenticate` to return a `realm` value, pass the middleware an `options` objects with the `realm`
+If you want the `WWW-Authenticate` to return a `realm` value, pass the middleware an `options` object with the `realm`
 option set.
 
 ```javascript

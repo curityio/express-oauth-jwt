@@ -1,7 +1,21 @@
+/*
+ *  Copyright 2020 Curity AB
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 import { RequestHandler } from "express";
-import * as https from 'https';
-import { JWKS } from "jose";
-import KeyStore = JWKS.KeyStore;
+import {FlattenedJWSInput, GetKeyFunction, JWSHeaderParameters} from "jose/dist/types/types";
 
 
 declare namespace errors {
@@ -23,23 +37,5 @@ interface Options {
     scope?: string[];
 }
 
-interface JwksService {
-    (callback: (error?: Error, keyStore?: KeyStore) => void, refreshKeyStore?: boolean): Promise<void>;
-}
-
-interface Cache {
-    getKeyStore(): Promise<KeyStore>;
-    setKeyStore(keystore: KeyStore): Promise<void>;
-}
-
-declare class InMemoryCache implements Cache {
-    keyStore: KeyStore;
-    getKeyStore: () => Promise<KeyStore>;
-    setKeyStore: (keyStore: KeyStore) => Promise<void>;
-}
-
-declare function jwksService(cache: Cache, jwksUri: string, client?: typeof https): JwksService;
-declare function getSimpleJwksService(jwksUri: string): JwksService;
-declare function secure(jwksService: JwksService, options?: Options): RequestHandler;
-export { secure, jwksService, getSimpleJwksService, InMemoryCache, errors };
-export {Claim, Options, JwksService, Cache};
+declare function secure(getKey: GetKeyFunction<JWSHeaderParameters, FlattenedJWSInput>, options?: Options): RequestHandler;
+export { secure, errors, Claim, Options };
