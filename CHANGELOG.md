@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 2.0.1
+Released 2022-10-07
+
+- Updated jose library to 4.10.0
+
 ## Version 2.0.0
 Released: 2022-04-13
 
