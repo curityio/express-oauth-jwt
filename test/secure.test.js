@@ -258,7 +258,7 @@ test('should call next() when required claim has correct value', async t => {
 
 test('should call next() when required claims present and have correct values and token has required scope', async t => {
     const keyPair = await generateKeyPair('RS256')
-    const authorizationHeader = "Bearer " + await getJwt(keyPair.privateKey,'openid profile', { customClaim: 'CorrectValue', presentClaim: 'present' });
+    const authorizationHeader = "Bearer " + await getJwt(keyPair.privateKey, 'openid profile', { customClaim: 'CorrectValue', presentClaim: 'present' });
     const req = requestMock(authorizationHeader);
     const res = responseMock();
     const next = sinon.spy();
@@ -269,6 +269,50 @@ test('should call next() when required claims present and have correct values an
     await secure(req, res, next);
 
     t.true(next.called, 'next() should be eventually called in the middleware.');
+});
+
+test('should call next() when token has correct issuer and valid audience array claim', async t => {
+    const keyPair = await generateKeyPair('RS256')
+    const authorizationHeader = "Bearer " + await getJwt(keyPair.privateKey,'', { aud: ['myclient', 'api.example.com'] });
+    const req = requestMock(authorizationHeader);
+    const res = responseMock();
+    const next = sinon.spy();
+    const jwkServiceMock = async () => keyPair.publicKey
+
+    const expectedClaims = [
+        { name: 'iss', value: 'test' },
+        { name: 'aud', value: 'api.example.com' }
+    ];
+
+    const secure = secureMiddleware(jwkServiceMock, { claims: expectedClaims });
+
+    await secure(req, res, next);
+
+    t.true(next.called, 'next() should be eventually called in the middleware.');
+});
+
+test('should call next() when token has correct issuer and invalid audience array claim', async t => {
+    const keyPair = await generateKeyPair('RS256')
+    const authorizationHeader = "Bearer " + await getJwt(keyPair.privateKey,'', { aud: ['myclient', 'api.anotheraudience.com'] });
+    const req = requestMock(authorizationHeader);
+    const res = responseMock();
+    const next = sinon.spy();
+    const jwkServiceMock = async () => keyPair.publicKey
+
+    const expectedClaims = [
+        { name: 'iss', value: 'test' },
+        { name: 'aud', value: 'api.example.com' }
+    ];
+
+    const secure = secureMiddleware(jwkServiceMock, { claims: expectedClaims });
+
+    await secure(req, res, next);
+
+    t.true(res.status.calledWith(403), 'Response status is not 403');
+    t.true(res.append.calledWith(wwwAuthenticate, 'Bearer'), 'Response header WWW-Authenticate has wrong value.');
+    t.true(res.append.calledWith(wwwAuthenticate, 'error="invalid_token"'), 'Response header WWW-Authenticate has wrong value.');
+    t.true(res.append.calledWith(wwwAuthenticate, 'error_description="Token is missing some required claims"'), 'Response header WWW-Authenticate has wrong value.');
+    t.true(res.send.called, 'send() should be called on response object.');
 });
 
 test('should return 403 with invalid_token when signature not valid', async t => {
