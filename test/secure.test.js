@@ -291,7 +291,7 @@ test('should call next() when token has correct issuer and valid audience array 
     t.true(next.called, 'next() should be eventually called in the middleware.');
 });
 
-test('should call next() when token has correct issuer and invalid audience array claim', async t => {
+test('should return 403 when token has correct issuer and invalid audience array claim', async t => {
     const keyPair = await generateKeyPair('RS256')
     const authorizationHeader = "Bearer " + await getJwt(keyPair.privateKey,'', { aud: ['myclient', 'api.anotheraudience.com'] });
     const req = requestMock(authorizationHeader);
