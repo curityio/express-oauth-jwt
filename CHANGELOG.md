@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 2.0.2
+Released 2023-07-26
+
+- Authorizing the request based on claim values now properly handles array claims. The request is authorized if the required value is one of the elements of the array.
+
 ## Version 2.0.1
 Released 2022-10-07
 
